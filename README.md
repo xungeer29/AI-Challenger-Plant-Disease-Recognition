@@ -112,6 +112,8 @@
 * 加几层conv、fc 已完成
 * data argument 已完成
 * 集成多种模型xgboost
+* 细粒度识别解决有些图片相似度小的问题
+* 将softmax替换为amsoftmax
 
 ### 版本说明
 v1--使用inception-v3瓶颈层的结果进行分类，准确率可达65%
@@ -121,4 +123,7 @@ v4--增加了数据增强，尚未实验
 
 ### Submit
 test_result-v1.json: 仅是为了测试格式是否正确
+
 test_result-v2.json： 使用Inception-v3训练了10000步，对应V3的代码，准确率75.459% 220
+
+test_result-v3.json: 加入数据增强，训练20000步，准确率76.729%
