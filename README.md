@@ -84,7 +84,7 @@
 ```
 
 ### 算法思路
-* 迁移学习，使用Inception-v3，准确率可以达到75%
+* 迁移学习，使用Inception-v3，准确率可以达到81%
 * 学习率指数衰减
   decayed_lr = lr \cdot decay_rate^{step/decay_steps}
 
