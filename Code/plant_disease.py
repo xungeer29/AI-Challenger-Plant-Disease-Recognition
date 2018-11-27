@@ -49,14 +49,14 @@ if not os.path.exists(bottleneck_path+bottleneck_test_dir):
     os.makedirs(bottleneck_path+bottleneck_test_dir)
 
 
-BATCH_SIZE = 128 # 设为2的指数倍
+BATCH_SIZE = 64 # 设为2的指数倍
 # IMAGE_SIZE = 128 # 设为2的指数倍 使用inception-v3不需要指定图像大小
 LEARNING_RATE = 0.01
 # 衰减系数
 DECAY_RATE = 0.9
 # 衰减间隔数
 DECAY_STEPS = 100
-STEPS = 10000
+STEPS = 140000
 CLASSES = 61
 
 BOTTLENECK_TENSOR_SIZE = 2048
@@ -97,6 +97,12 @@ def get_or_create_bottleneck(sess, image_name, image_path, category,
     if not image_name+'.txt' in os.listdir(bottleneck_path+category+'/'):
         image_dir = image_path + image_name
         image = gfile.FastGFile(image_dir, 'rb').read()
+        image = tf.image.decode_jpeg(image)
+        print image.eval()
+        # 使用数据增强
+        image = data_argument(image)
+        # 可视化增强的图像
+        tf.summary.image('data_argument', image, max_images=9)
         bottleneck_values = run_bottleneck_on_image(sess, image, 
                                 jpeg_data_tensor, bottleneck_tensor)
 
@@ -163,7 +169,24 @@ def get_batch_images(sess, json_dir, image_path, category, jpeg_data_tensor,
 """
 数据增强
 """
-#def data_argument(image):
+def data_argument(image):
+    try:
+        # 随机裁剪
+        rate = np.random.randint(8, 10)
+        image_size = tf.cast(tf.shape(image).eval(), tf.int32)
+        image = tf.random_crop(image, [int(image_size[0]*rate*0.1), int(image_size[1]*rate*0.1), 3])
+    except:
+        print tf.shape(image).eval()
+    # 随机左右翻转
+    image = tf.image.random_flip_left_right(image)
+    # 随机上下翻转
+    image = tf.image.random_up_down(image)
+    # 随机旋转90*n次
+    image = tf.image.rot90(image, np.random.randint(1, 4))
+    # 均值变为0,方差变为1
+    image = tf.image.per_image_whitening(image)
+    
+    return image 
 
 
 """
@@ -240,7 +263,31 @@ def model(bottleneck_input):
 
     return logits, final_tensor
 
-        
+"""
+AM-Softmax
+input:
+    --embedding: 网络输出的logits归一化的值
+    --label_batch: a batch of groundtruth
+    --args：上一层网络大小
+    --nrof_classes: 类别数量
+return：
+    --adjust_theta: 
+"""
+def AM_logits_compute(embeddings, label_onehot, args, nrof_classes):
+    m = 0.35
+    s = 30
+    with tf.name_scope('AM_logits'):
+        kernel = tf.get_variable(name='kernel', dtype=tf.float32,
+                    shape=[args, nrof_classes],
+                    initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+        kernel_norm = tf.nn.l2_normalize(kernel, 0, 1e-10, name='kernel_norm')
+        cos_theta = tf.matmul(embeddings, kernel_norm)
+        cos_theta = tf.clip_by_value(cos_theta, -1,1) # for numerical steady
+        phi = cos_theta - m
+        # label_onehot = tf.one_hot(label_batch, nrof_classes)
+        adjust_theta = s * tf.where(tf.equal(label_onehot, 1), phi, cos_theta)
+
+        return adjust_theta
 
 
 def main(_):
@@ -271,9 +318,15 @@ def main(_):
         final_tensor = tf.nn.softmax(logits)
         tf.summary.histogram('fc1'+'/activation', final_tensor)
 
+    # 增加AM-Softmax代替softmax
+    # embeddings = tf.nn.l2_normalize(bottleneck_input, 1, 1e-10, name='embeddings')
+    # AM_logits = AM_logits_compute(embeddings, groundtruth_input, 
+    #                               BOTTLENECK_TENSOR_SIZE, CLASSES)
+
     # 定义交叉熵损失
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-                            logits=logits, labels=groundtruth_input)
+                            logits=logits, labels=groundtruth_input,
+                            name='cross_entropy_per_example')
     cross_entropy_mean = tf.reduce_mean(cross_entropy)
     tf.summary.scalar('cross_entropy', cross_entropy_mean)
     # 指数衰减学习率
@@ -291,7 +344,7 @@ def main(_):
 
     # 计算正确率
     with tf.name_scope('evaluation'):
-        correct_prediction = tf.equal(tf.argmax(final_tensor, 1),
+        correct_prediction = tf.equal(tf.argmax(logits, 1), # final_tensor
                                 tf.argmax(groundtruth_input, 1))
         evaluation_step = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         tf.summary.scalar('evaluation', evaluation_step)
@@ -341,7 +394,7 @@ def main(_):
         # 预测test中的数据，并保存成可提交的json格式
         test_bottlenecks, test_images = get_test_bottlenecks(sess,
                     TEST_IMAGES_DIR, jpeg_data_tensor, bottleneck_tensor)
-        predict_test = sess.run(final_tensor, 
+        predict_test = sess.run(logits, # final_tensor
                         feed_dict={bottleneck_input: test_bottlenecks})
         predict_test = tf.argmax(predict_test, 1)
 
@@ -355,7 +408,7 @@ def main(_):
             single["disease_class"] = int(predict_test[index].eval())
             single["image_id"] = test_images[index]
             result.append(single)
-        print result
+        # print result
         # with open('./test_result.txt', 'w') as f:
         #     f.write(result)
         # 写入json
