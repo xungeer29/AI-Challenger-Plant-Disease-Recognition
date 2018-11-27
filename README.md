@@ -2,6 +2,9 @@
 ## 农作物病害检测
 详情请见[CSDN](https://blog.csdn.net/qq_40859461/article/details/84199358#commentsedit)
 
+## 环境配置
+tensorflow==1.2.1
+
 ## 使用方法
 * 更改 plot.py 脚本中路径，运行该脚本，可以绘出数据分布的直方图
 * 下载预训练模型 [Inception-V3](https://storage.googleapis.com/download.tensorflow.org/models/inception_dec_2015.zip
@@ -9,6 +12,15 @@
 * 更改 plant_disease.py 中的输入文件路径，输出文件路径，预训练模型文件路径
 * 在 code 路径下直接运行 python plant_disease.py
 * 训练完成后会直接使用训练得到的参数预测 testA 数据集，生成可以用来直接提交的 json 文件
+
+## 大佬开源分享
+* [spytensor/plants_disease_detection](https://github.com/spytensor/plants_disease_detection)
+  框架：pytorch 
+  最终成绩：0.875
+  
+* [bochuanwu/Agricultural-Disease-Classification](https://github.com/bochuanwu/Agricultural-Disease-Classification)
+  框架：keras
+  最终成绩：0.88658
 
 ## 其他
 | Label ID | Label Name   |
