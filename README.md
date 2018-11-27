@@ -3,6 +3,7 @@
 详情请见[CSDN](https://blog.csdn.net/qq_40859461/article/details/84199358#commentsedit)
 
 ## 使用方法
+* 更改 plot.py 脚本中路径，运行该脚本，可以绘出数据分布的直方图
 * 下载预训练模型 [Inception-V3](https://storage.googleapis.com/download.tensorflow.org/models/inception_dec_2015.zip
 )
 * 更改 plant_disease.py 中的输入文件路径，输出文件路径，预训练模型文件路径
