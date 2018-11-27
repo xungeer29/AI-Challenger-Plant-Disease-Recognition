@@ -1,11 +1,15 @@
 # AI-Challenger-Plant-Disease-Recognition
 ## 农作物病害检测
-### 赛题简介
-病虫害的诊断对于农业生产来说至关重要。本次农作物病虫害识别比赛邀请参赛者设计算法与模型，对图像中的农作物叶子进行病虫害识别。
-### 数据说明
-数据集有61个分类（按“物种-病害-程度”分），10个物种，27种病害（其中24个病害有分一般和严重两种程度），10个健康分类，47637张图片。每张图包含一片农作物的叶子，叶子占据图片主要位置。数据集随机分为训练（70%）、验证（10%）、测试A（10%）与测试B（10%）四个子数据集。训练集和验证集包含图片和标注的json文件，json文件中包含每一张图片和对应的分类ID。
+详情请见[CSDN](https://blog.csdn.net/qq_40859461/article/details/84199358#commentsedit)
 
+## 使用方法
+* 下载预训练模型 [Inception-V3](https://storage.googleapis.com/download.tensorflow.org/models/inception_dec_2015.zip
+)
+* 更改 plant_disease.py 中的输入文件路径，输出文件路径，预训练模型文件路径
+* 在 code 路径下直接运行 python plant_disease.py
+* 训练完成后会直接使用训练得到的参数预测 testA 数据集，生成可以用来直接提交的 json 文件
 
+## 其他
 | Label ID | Label Name   |
 |----------|--------------|
 |   0     |   apple healthy（苹果健康）     |
@@ -82,48 +86,3 @@
     ...
 ]
 ```
-
-### 算法思路
-* 迁移学习，使用Inception-v3，准确率可以达到81%
-* 学习率指数衰减
-  decayed_lr = lr \cdot decay_rate^{step/decay_steps}
-
-* 数据读取
-  ```Python
-  # 读取原始图像数据
-  image_row_data = tf.gfile.FastGFile(image_dir, 'r').read()
-  # jpeg解码图像，得到三维矩阵，可用于显示图像
-  img_data = tf.image.decode_jpeg(image_row_data)
-  # 将数据类型转化为实数，以便程序处理
-  img_data = tf.image.convert_image_dtype(img_data, dtype=tf.float32)
-  ```
-* 数据输入
-  Inception-v3的输入层--Cast节点可以接受任意尺寸的矩阵输入，然后再扩展维度为 (1，？，？，3）的图片矩阵，最后统一resize为（1,229,229,3）的图片矩阵，inception只接受单张图片的输入，不接受batch图片;
-
-* 最后一层千万不能用Relu
-
-### 遇到的问题
-* unicode编码
-* 模型怎么选择
-* xgboost
-
-### 优化思路
-* 动态指数衰减lr 已完成
-* 加几层conv、fc 已完成
-* data argument 已完成
-* 集成多种模型xgboost
-* 细粒度识别解决有些图片相似度小的问题
-* 将softmax替换为amsoftmax
-
-### 版本说明
-v1--使用inception-v3瓶颈层的结果进行分类，准确率可达65%
-v2--加了使用test部分测试的代码，写入json，可供提交
-v3--增加了学习率指数衰减，模型保存，每1000步计算一次在validiation的正确率，增加了三层全连接层加强分类效果(效果不是很好),增加将结果保存为json的代码
-v4--增加了数据增强，尚未实验
-
-### Submit
-test_result-v1.json: 仅是为了测试格式是否正确
-
-test_result-v2.json： 使用Inception-v3训练了10000步，对应V3的代码，准确率75.459% 220
-
-test_result-v3.json: 加入数据增强，训练20000步，准确率76.729%
