@@ -15,12 +15,12 @@ tensorflow==1.2.1
 
 ## 大佬开源分享
 * [spytensor/plants_disease_detection](https://github.com/spytensor/plants_disease_detection)
-  框架：pytorch 
-  最终成绩：0.875
+  * 框架：pytorch 
+  * 最终成绩：0.875
   
 * [bochuanwu/Agricultural-Disease-Classification](https://github.com/bochuanwu/Agricultural-Disease-Classification)
-  框架：keras
-  最终成绩：0.88658
+  * 框架：keras
+  * 最终成绩：0.88658
 
 ## 其他
 | Label ID | Label Name   |
