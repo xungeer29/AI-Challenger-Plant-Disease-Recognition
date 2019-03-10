@@ -3,6 +3,7 @@
 详情请见[CSDN](https://blog.csdn.net/qq_40859461/article/details/84199358#commentsedit)
 
 ## 环境配置
+python==2.7
 tensorflow==1.2.1
 
 ## 使用方法
